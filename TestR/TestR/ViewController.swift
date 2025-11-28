@@ -8,6 +8,7 @@
 import UIKit
 
 class ViewController: UIViewController {
+    // MARK: UI properties
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -21,6 +22,20 @@ class ViewController: UIViewController {
         return collectionView
     }()
 
+    private lazy var addButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Add", for: .normal)
+        button.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
+        
+        return button
+    }()
+
+    // MARK: - Private properties
+
+    private var counter: Int = 0
+
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -30,21 +45,38 @@ class ViewController: UIViewController {
         layouViews()
     }
 
+    // MARK: - Private methods
+
     private func setupViews() {
         view.addSubview(collectionView)
+        view.addSubview(addButton)
     }
 
     private func layouViews() {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        addButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-//            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.heightAnchor.constraint(equalToConstant: 150),
             collectionView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-//            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        NSLayoutConstraint.activate([
+            addButton.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 20),
+            addButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
+    }
+
+    // MARK: - Actions
+
+    @objc private func addTapped() {
+        counter += 1
+
+        collectionView.reloadData()
+        let indexPath = IndexPath(item: counter - 1, section: 0)
+        collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
     }
 }
 
@@ -53,7 +85,7 @@ extension ViewController: UICollectionViewDataSource {
         _ collectionView: UICollectionView,
         numberOfItemsInSection section: Int
     ) -> Int {
-        10
+        counter
     }
     
     func collectionView(
