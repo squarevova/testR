@@ -7,6 +7,11 @@
 
 import UIKit
 
+protocol ServiceProtocol {
+    func addItem()
+    func remove(at: Int)
+}
+
 class ViewController: UIViewController {
     // MARK: UI properties
     private lazy var collectionView: UICollectionView = {
@@ -174,5 +179,25 @@ extension ViewController: UIGestureRecognizerDelegate {
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
     ) -> Bool {
         true
+    }
+}
+
+extension ViewController: ServiceProtocol {
+    func addItem() {
+        DispatchQueue.main.async {
+            self.addTapped()
+        }
+    }
+
+    func remove(at index: Int) {
+        DispatchQueue.main.async {
+            guard index >= 0 && index < self.counter else {
+                return
+            }
+
+            let indexPath = IndexPath(item: index, section: 0)
+
+            self.removeItemAtIndexPath(indexPath)
+        }
     }
 }
