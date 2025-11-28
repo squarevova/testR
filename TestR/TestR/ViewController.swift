@@ -106,6 +106,14 @@ extension ViewController: UICollectionViewDataSource {
 }
 
 extension ViewController: UICollectionViewDelegate {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didSelectItemAt indexPath: IndexPath
+    ) {
+        guard counter > 0 else { return }
 
+        counter -= 1
+        collectionView.deleteItems(at: [indexPath])
+    }
 }
 
