@@ -18,6 +18,7 @@ class ViewController: UIViewController {
         collectionView.register(CustomCell.self, forCellWithReuseIdentifier: CustomCell.reuseIdentifier)
         collectionView.dataSource = self
         collectionView.delegate = self
+        collectionView.clipsToBounds = false
 
         return collectionView
     }()
@@ -33,6 +34,7 @@ class ViewController: UIViewController {
     // MARK: - Private properties
 
     private var counter: Int = 0
+    private var pannedCell: CustomCell?
 
     // MARK: - Lifecycle
 
@@ -50,6 +52,10 @@ class ViewController: UIViewController {
     private func setupViews() {
         view.addSubview(collectionView)
         view.addSubview(addButton)
+
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        panGesture.delegate = self
+        view.addGestureRecognizer(panGesture)
     }
 
     private func layouViews() {
@@ -69,6 +75,13 @@ class ViewController: UIViewController {
         ])
     }
 
+    private func removeItemAtIndexPath(_ indexPath: IndexPath) {
+        guard counter > 0 else { return }
+
+        counter -= 1
+        collectionView.deleteItems(at: [indexPath])
+    }
+
     // MARK: - Actions
 
     @objc private func addTapped() {
@@ -77,6 +90,47 @@ class ViewController: UIViewController {
         collectionView.reloadData()
         let indexPath = IndexPath(item: counter - 1, section: 0)
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
+    }
+
+    @objc private func handlePan(gesture: UIPanGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            guard
+                let indexPath = collectionView.indexPathForItem(at: gesture.location(in: collectionView)),
+                let cell = collectionView.cellForItem(at: indexPath) as? CustomCell
+            else {
+                return
+            }
+
+            collectionView.isScrollEnabled = false
+
+            pannedCell = cell
+        case .changed:
+            guard let pannedCell else { return }
+
+            pannedCell.transform = CGAffineTransform(translationX: 0, y: gesture.translation(in: collectionView).y)
+        case .ended:
+            guard let pannedCell else { return }
+
+            let scrollViewHeight = collectionView.bounds.height
+            let cellTranslationY = pannedCell.transform.ty
+
+            let heightDiff = (scrollViewHeight - pannedCell.bounds.height) / 2.0
+
+            if abs(cellTranslationY) - heightDiff > pannedCell.bounds.height / 2 {
+                guard let indexPath = collectionView.indexPath(for: pannedCell) else {
+                    return
+                }
+
+                removeItemAtIndexPath(indexPath)
+            } else {
+                pannedCell.transform = .identity
+            }
+
+            collectionView.isScrollEnabled = true
+        default:
+            break
+        }
     }
 }
 
@@ -110,10 +164,15 @@ extension ViewController: UICollectionViewDelegate {
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
-        guard counter > 0 else { return }
-
-        counter -= 1
-        collectionView.deleteItems(at: [indexPath])
+        removeItemAtIndexPath(indexPath)
     }
 }
 
+extension ViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        true
+    }
+}
