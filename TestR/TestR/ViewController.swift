@@ -49,7 +49,7 @@ class ViewController: UIViewController {
         view.backgroundColor = .blue
 
         setupViews()
-        layouViews()
+        layoutViews()
     }
 
     // MARK: - Private methods
@@ -63,7 +63,7 @@ class ViewController: UIViewController {
         view.addGestureRecognizer(panGesture)
     }
 
-    private func layouViews() {
+    private func layoutViews() {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         addButton.translatesAutoresizingMaskIntoConstraints = false
 
@@ -107,14 +107,22 @@ class ViewController: UIViewController {
                 return
             }
 
-            collectionView.isScrollEnabled = false
-
             pannedCell = cell
         case .changed:
             guard let pannedCell else { return }
 
-            pannedCell.transform = CGAffineTransform(translationX: 0, y: gesture.translation(in: collectionView).y)
-        case .ended:
+            let translation = gesture.translation(in: collectionView)
+
+            if abs(translation.y) > abs(translation.x) {
+                collectionView.isScrollEnabled = false
+                pannedCell.transform = CGAffineTransform(translationX: 0, y: translation.y)
+            }
+        case .ended, .cancelled:
+            defer {
+                collectionView.isScrollEnabled = true
+                pannedCell = nil
+            }
+
             guard let pannedCell else { return }
 
             let scrollViewHeight = collectionView.bounds.height
@@ -124,15 +132,16 @@ class ViewController: UIViewController {
 
             if abs(cellTranslationY) - heightDiff > pannedCell.bounds.height / 2 {
                 guard let indexPath = collectionView.indexPath(for: pannedCell) else {
+                    pannedCell.transform = .identity
                     return
                 }
 
                 removeItemAtIndexPath(indexPath)
             } else {
-                pannedCell.transform = .identity
+                UIView.animate(withDuration: 0.2) {
+                    pannedCell.transform = .identity
+                }
             }
-
-            collectionView.isScrollEnabled = true
         default:
             break
         }
